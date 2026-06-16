@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>登入</title>
+    <link rel="stylesheet" href="{% static 'house/css/property.css' %}">
+</head>
+<body class="auth-page">
+
+<header class="auth-header">
+    <div class="logo"><span>591</span> 房屋交易</div>
+    <a href="{% url 'house:property_list' %}">返回首頁</a>
+</header>
+
+<main class="auth-main">
+    <section class="auth-left">
+        <div class="auth-banner-text">
+            中古屋「精選推薦」<br>
+            獲客效果快速提升 5倍+
+        </div>
+    </section>
+
+    <section class="auth-box">
+        <h2>密碼登入</h2>
+
+        {% for message in messages %}
+            <div class="auth-message">{{ message }}</div>
+        {% endfor %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="auth-input-row">
+                <label>帳號</label>
+                <input type="text" name="username" placeholder="輸入帳號" required>
+            </div>
+
+            <div class="auth-input-row">
+                <label>密碼</label>
+                <input type="password" name="password" placeholder="輸入密碼" required>
+            </div>
+
+            <button type="submit" class="auth-submit" id="authSubmit" disabled>登入</button>
+        </form>
+
+        <div class="auth-bottom">
+            還不是會員？
+            <a href="{% url 'house:register' %}">免費註冊</a>
+        </div>
+    </section>
+</main>
+
+<script>
+const usernameInput = document.querySelector('input[name="username"]');
+const passwordInput = document.querySelector('input[name="password"]');
+const submitBtn = document.getElementById("authSubmit");
+
+function checkAuthForm() {
+    const ok = usernameInput.value.trim() !== "" && passwordInput.value.trim() !== "";
+
+    submitBtn.disabled = !ok;
+
+    if (ok) {
+        submitBtn.classList.add("active");
+    } else {
+        submitBtn.classList.remove("active");
+    }
+}
+
+usernameInput.addEventListener("input", checkAuthForm);
+passwordInput.addEventListener("input", checkAuthForm);
+checkAuthForm();
+</script>
+
+</body>
+</html>

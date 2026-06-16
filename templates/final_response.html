@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人小檔案結果</title>
+    <style>
+      body {
+        background-color: #d1fce8; /* 配合你圖中的淺綠色背景 */
+      }
+      
+    </style> 
+</head>
+<body>    
+    {% if usersex == 'male' %}
+        <h2>{{ username }}先生您好!</h2>
+        <!-- <strong>{{ username }}先生您好!</strong> -->
+    {% else %}
+        <h2>{{ username }}小姐您好!</h2>
+    {% endif %}
+    <p>您的學歷為: {{ userschool }}</p>
+    <p>您喜歡的活動如下:</p>
+    <ul>
+        
+        {% for interest in userinterest %}
+            <li>{{ interest }}</li>
+        {% empty %}
+            <li>沒有選擇任何活動</li>    
+        {% endfor %}    
+    </ul>
+    <p>您對於使用臉書經營社群有何看法為:</p>
+    <p>{{ userthought|linebreaksbr }}</p>
+</body>
+</html>

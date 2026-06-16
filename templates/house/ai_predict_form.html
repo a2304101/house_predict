@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 房價預測</title>
+    <link rel="stylesheet" href="{% static 'house/css/property.css' %}">
+</head>
+<body>
+
+<div class="container">
+    <h1 class="page-title">AI 房價預測</h1>
+
+    <form method="post" action="{% url 'house:ai_predict_result' %}" class="filter-panel">
+        {% csrf_token %}
+
+        <div class="filter-row">
+            <div class="filter-label">土地位置建物門牌</div>
+            <input type="text" name="address" class="filter-input wide-input" required>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">縣市</div>
+
+            <select name="city" class="filter-select" id="citySelect" onchange="reloadDistricts()">
+                {% for city in cities %}
+                    <option value="{{ city.id }}"
+                        {% if selected_city and selected_city.id == city.id %}selected{% endif %}>
+                        {{ city.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">鄉鎮市區</div>
+
+            <select name="district" class="filter-select" id="districtSelect" required>
+                {% for d in districts %}
+                    <option value="{{ d.name }}">
+                        {{ d.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">建物型態</div>
+
+            <div class="checkbox-group">
+                {% for bt in building_type_options %}
+                    <label class="check-item">
+                        <input type="radio"
+                            name="building_type"
+                            value="{{ bt }}"
+                            {% if forloop.first %}checked{% endif %}
+                            onchange="updateMainArea()">
+                        {{ bt }}
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">坪數</div>
+            <input type="number"
+                step="0.01"
+                name="area"
+                id="areaInput"
+                class="filter-small"
+                placeholder="35"
+                oninput="updateMainArea()">
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">屋齡</div>
+            <input type="number" step="0.1" name="age" class="filter-small" placeholder="25">
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">移轉層次</div>
+            <input type="number"
+                step="1"
+                name="transfer_floor"
+                class="filter-small"
+                placeholder="1">
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">總樓層數</div>
+            <input type="number"
+                step="1"
+                name="total_floors"
+                class="filter-small"
+                placeholder="3">
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">電梯</div>
+            <label><input type="radio" name="elevator" value="1" checked> 有</label>
+            <label><input type="radio" name="elevator" value="0"> 無</label>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">預售屋</div>
+            <label><input type="radio" name="is_presale" value="1"> 是</label>
+            <label><input type="radio" name="is_presale" value="0" checked> 否</label>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">屋齡缺失</div>
+            <label><input type="radio" name="age_was_missing" value="1"> 是</label>
+            <label><input type="radio" name="age_was_missing" value="0" checked> 否</label>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-label">主建物坪數</div>
+            <input type="number"
+                step="0.01"
+                name="main_building_ping"
+                id="mainBuildingInput"
+                class="filter-small"
+                placeholder="21.70">
+            <span class="muted-text">會依建物型態與坪數自動估算，可自行修改</span>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">開始預測</button>
+        </div>
+    </form>
+</div>
+<script>
+function reloadDistricts() {
+    const cityId = document.getElementById("citySelect").value;
+    window.location.href = "{% url 'house:ai_predict_form' %}?city=" + cityId;
+}
+
+function getSelectedBuildingType() {
+    const checked = document.querySelector('input[name="building_type"]:checked');
+    return checked ? checked.value : "住宅大樓(11層含以上有電梯)";
+}
+
+function getMainAreaRatio(buildingType) {
+    const ratios = {
+        "住宅大樓(11層含以上有電梯)": 0.62,
+        "華廈(10層含以下有電梯)": 0.7,
+        "公寓(5樓含以下無電梯)": 0.85,
+        "透天厝": 0.95,
+        "其他": 0.8,
+        "套房(1房1廳1衛)": 0.55
+    };
+
+    return ratios[buildingType] || 0.62;
+}
+
+function updateMainArea() {
+    const areaInput = document.getElementById("areaInput");
+    const mainInput = document.getElementById("mainBuildingInput");
+
+    const area = parseFloat(areaInput.value || areaInput.placeholder || "35");
+    const buildingType = getSelectedBuildingType();
+    const ratio = getMainAreaRatio(buildingType);
+
+    if (!isNaN(area)) {
+        mainInput.value = (area * ratio).toFixed(2);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    updateMainArea();
+});
+</script>
+</body>
+</html>

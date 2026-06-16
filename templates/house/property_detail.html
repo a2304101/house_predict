@@ -1,0 +1,596 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>房屋詳細資料</title>
+    <link rel="stylesheet" href="{% static 'house/css/property.css' %}">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="top-bar">
+        <a href="{% url 'house:property_list' %}" class="back-link">← 返回列表</a>
+    </div>
+
+    <section class="detail-header">
+        <button class="detail-favorite-btn {% if is_favorited %}favorited{% endif %}"
+                data-property-id="{{ prop.id }}"
+                onclick="toggleFavorite(this)">
+            {% if is_favorited %}
+                ♥ 已收藏
+            {% else %}
+                ♡ 收藏
+            {% endif %}
+        </button>
+
+        <div>
+            <span class="badge">{{ prop.get_source_type_display }}</span>
+
+            <h1>
+                {% if prop.project_name %}
+                    {{ prop.project_name }}
+                {% else %}
+                    {{ prop.location.full_address }}
+                {% endif %}
+            </h1>
+
+            <p class="address">
+                {{ prop.location.district.city.name }}
+                {{ prop.location.district.name }}
+                {{ prop.location.full_address }}
+            </p>
+        </div>
+
+        {% if sinyi_detail and sinyi_detail.large_image %}
+        <div class="detail-photo">
+            <img src="{{ sinyi_detail.large_image }}" alt="信義房屋圖片">
+        </div>
+        {% elif existing_detail and existing_detail.photo %}
+        <div class="detail-photo">
+            <img src="{{ existing_detail.photo }}" alt="房屋圖片">
+        </div>
+        {% endif %}
+
+
+        <div class="detail-price">
+            {% if prediction and prediction.prediction_price %}
+                <div class="detail-predict">
+                    預測 {{ prediction.prediction_price|floatformat:2 }} 萬/坪
+                </div>
+            {% endif %}
+
+            {% if prop.unit_price %}
+                <strong>{{ prop.unit_price|floatformat:2 }}</strong>
+                <span>萬/坪</span>
+            {% else %}
+                <strong>-</strong>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="detail-grid">
+        {% if sinyi_detail %}
+        <div class="detail-card wide">
+            <h2>信義房屋明細</h2>
+            <table>
+                <tr><th>houseNo</th><td>{{ sinyi_detail.house_no|default:"-" }}</td></tr>
+                <tr><th>name</th><td>{{ sinyi_detail.name|default:"-" }}</td></tr>
+                <tr><th>largeImage</th>
+                    <td>
+                        {% if sinyi_detail.large_image %}
+                            <a class="url-link" href="{{ sinyi_detail.large_image }}" target="_blank">
+                                {{ sinyi_detail.large_image }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+
+
+                <tr><th>managerId</th><td>-</td></tr>
+                <tr><th>discount</th><td>{{ sinyi_detail.discount|default:"-" }}</td></tr>
+                <tr><th>priceFirst</th><td>{{ sinyi_detail.price_first|default:"-" }}</td></tr>
+                <tr><th>地坪</th><td>{{ sinyi_detail.area_land|default:"-" }}</td></tr>
+                <tr><th>陽台</th><td>{{ sinyi_detail.is_has_balcony|default:"-" }}</td></tr>
+                <tr><th>格局</th><td>{{ sinyi_detail.layout|default:"-" }}</td></tr>
+                <tr><th>停車場</th><td>{{ sinyi_detail.is_parking|yesno:"有,無" }}</td></tr>
+                <tr><th>點擊率</th><td>{{ sinyi_detail.three_months_clicks|default:"-" }}</td></tr>
+                <tr><th>shareURL</th>
+                    <td>
+                        {% if sinyi_detail.share_url %}
+                            <a class="url-link" href="{{ sinyi_detail.share_url }}" target="_blank">
+                                {{ sinyi_detail.share_url }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>                
+                
+                </tr>
+                <tr><th>zipCode</th><td>{{ sinyi_detail.zip_code|default:"-" }}</td></tr>
+                <tr><th>addLayout</th><td>{{ sinyi_detail.add_layout|default:"-" }}</td></tr>
+                <tr><th>totalLayout</th><td>{{ sinyi_detail.total_layout|default:"-" }}</td></tr>
+                <tr><th>city_code</th><td>{{ sinyi_detail.city_code|default:"-" }}</td></tr>
+                <tr><th>source_url</th>
+                    <td>
+                        {% if sinyi_detail.source_url %}
+                            <a class="url-link" href="{{ sinyi_detail.source_url }}" target="_blank">
+                                {{ sinyi_detail.source_url }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>                
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="detail-card">
+            <h2>基本資料</h2>
+
+            <table>
+                <tr><th>資料來源</th><td>{{ prop.get_source_type_display }}</td></tr>
+                <tr><th>建物型態</th><td>{{ prop.building_type|default:"-" }}</td></tr>
+                <tr><th>建案名稱</th><td>{{ prop.project_name|default:"-" }}</td></tr>
+                <tr><th>坪數</th><td>{% if prop.area_ping %}{{ prop.area_ping|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>單價</th><td>{% if prop.unit_price %}{{ prop.unit_price|floatformat:2 }} 萬/坪{% else %}-{% endif %}</td></tr>
+                <tr><th>屋齡</th><td>{{ prop.building_age_text|default:"-" }}</td></tr>
+                <tr><th>總樓層數</th><td>{% if prop.total_floors %}{{ prop.total_floors|floatformat:0 }}{% else %}-{% endif %}</td></tr>
+                <tr>
+                    <th>移轉層次</th>
+                    <td>
+                        {% if prop.source_type == "591_presale" %}
+                            {{ prop.transfer_floor|default:"-" }}
+                        {% else %}
+                            {% if prop.transfer_floor_clean %}
+                                {{ prop.transfer_floor_clean }}
+                            {% elif prop.transfer_floor %}
+                                {{ prop.transfer_floor|floatformat:0 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr><th>電梯</th><td>{{ prop.elevator|yesno:"有,無,-" }}</td></tr>
+                <tr><th>主建物坪數</th><td>{{ prop.main_building_ping|default:"-" }}</td></tr>
+            </table>
+        </div>
+
+        <div class="detail-card">
+            <h2>位置資料</h2>
+
+            <table>
+                <tr><th>縣市</th><td>{{ prop.location.district.city.name }}</td></tr>
+                <tr><th>鄉鎮市區</th><td>{{ prop.location.district.name }}</td></tr>
+                <tr><th>完整行政區</th><td>{{ prop.location.full_district|default:"-" }}</td></tr>
+                <tr><th>地址</th><td>{{ prop.location.full_address|default:"-" }}</td></tr>
+                <tr><th>乾淨地址</th><td>{{ prop.location.clean_address|default:"-" }}</td></tr>
+                <tr><th>緯度</th><td>{{ prop.location.latitude|default:"-" }}</td></tr>
+                <tr><th>經度</th><td>{{ prop.location.longitude|default:"-" }}</td></tr>
+            </table>
+        </div>
+
+        <div class="detail-card">
+            <h2>時間資料</h2>
+
+            <table>
+                <tr><th>成交年</th><td>{{ prop.deal_year|default:"-" }}</td></tr>
+                <tr><th>成交月</th><td>{{ prop.deal_month|default:"-" }}</td></tr>
+                <tr><th>交易距今月數</th><td>{{ prop.months_since_deal|default:"-" }}</td></tr>
+                <tr><th>time_index</th><td>{% if prop.time_index %}{{ prop.time_index|floatformat:0 }}{% else %}-{% endif %}</td></tr>
+            </table>
+        </div>
+
+        {% if poi %}
+        <div class="detail-card">
+            <h2>生活機能 / POI</h2>
+
+            <table>
+                <tr><th>便利商店 300m</th><td>{{ poi.convenience_300m }}</td></tr>
+                <tr><th>便利商店 500m</th><td>{{ poi.convenience_500m }}</td></tr>
+                <tr><th>銀行 500m</th><td>{{ poi.bank_500m }}</td></tr>
+                <tr><th>餐飲 300m</th><td>{{ poi.food_300m }}</td></tr>
+                <tr><th>餐飲 500m</th><td>{{ poi.food_500m }}</td></tr>
+                <tr><th>醫療 500m</th><td>{{ poi.medical_500m }}</td></tr>
+                <tr><th>停車場 500m</th><td>{{ poi.parking_500m }}</td></tr>
+                <tr><th>高鐵距離</th><td>{{ poi.distance_to_thsr|default:"-" }} m</td></tr>
+                <tr><th>台鐵距離</th><td>{{ poi.distance_to_tra|default:"-" }} m</td></tr>
+                <tr><th>捷運距離</th><td>{{ poi.distance_to_mrt|default:"-" }} m</td></tr>
+                <tr><th>宗教場所距離</th><td>{{ poi.distance_to_worship|default:"-" }} m</td></tr>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if prediction %}
+        <div class="detail-card">
+            <h2>預測資料</h2>
+
+            <table>
+                <tr><th>區域上月均價</th><td>{% if prediction.area_last_month_price %}{{ prediction.area_last_month_price|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>總_編碼</th><td>{% if prediction.total_encoded %}{{ prediction.total_encoded|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>坪數_屋齡_交互</th><td>{% if prediction.area_age_interaction %}{{ prediction.area_age_interaction|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>預測</th><td>{% if prediction.prediction %}{{ prediction.prediction|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>預測均價</th><td>{% if prediction.prediction_avg %}{{ prediction.prediction_avg|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>預測最小值</th><td>{% if prediction.prediction_min %}{{ prediction.prediction_min|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>預測最大值</th><td>{% if prediction.prediction_max %}{{ prediction.prediction_max|floatformat:2 }}{% else %}-{% endif %}</td></tr>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if existing_detail %}
+        <div class="detail-card wide">
+            <h2>591 非預售明細</h2>
+
+            <table>
+                <tr><th>post_id</th><td>{{ existing_detail.post_id|default:"-" }}</td></tr>
+                <tr><th>kind_name</th><td>{{ existing_detail.kind_name|default:"-" }}</td></tr>
+                <tr><th>類型</th><td>{{ existing_detail.type_value|default:"-" }}</td></tr>
+                <tr><th>車棚</th><td>{{ existing_detail.car_shed|default:"-" }}</td></tr>
+                <tr><th>標題</th><td>{{ existing_detail.title|default:"-" }}</td></tr>
+                <tr><th>總價</th><td>{{ existing_detail.total_price|default:"-" }}</td></tr>
+                <tr><th>unit_price</th><td>{{ existing_detail.unit_price_text|default:"-" }}</td></tr>
+                <tr><th>layout</th><td>{{ existing_detail.layout|default:"-" }}</td></tr>
+                <tr><th>floor</th><td>{{ existing_detail.floor|default:"-" }}</td></tr>
+                <tr><th>community</th><td>{{ existing_detail.community|default:"-" }}</td></tr>
+                <tr><th>瀏覽次數</th><td>{{ existing_detail.views|default:"-" }}</td></tr>
+                <tr>
+                    <th>原始網址</th>
+                    <td>
+                        {% if existing_detail.url %}
+                            <a href="{{ existing_detail.url }}" target="_blank">開啟連結</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr><th>photo</th>
+                    <td class="long-text">
+                        {% if existing_detail.photo %}
+                            <a class="url-link" href="{{ existing_detail.photo }}" target="_blank">
+                                {{ existing_detail.photo }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>                
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if presale_detail %}
+        <div class="detail-card wide">
+            <h2>591 預售明細</h2>
+
+            <table>
+                <tr><th>hid</th><td>{% if presale_detail.hid %}{{ presale_detail.hid|floatformat:0 }}{% else %}-{% endif %}</td></tr>
+                <tr><th>建物型態_temp</th><td>{{ presale_detail.building_type_temp|default:"-" }}</td></tr>
+                <tr><th>坪數_temp</th><td>{{ presale_detail.area_temp|default:"-" }}</td></tr>
+                <tr><th>價錢單位</th><td>{{ presale_detail.price_unit|default:"-" }}</td></tr>
+                <tr><th>總價範圍</th><td>{{ presale_detail.total_price_range|default:"-" }}</td></tr>
+                <tr><th>單價區間</th><td>{{ presale_detail.unit_price_range|default:"-" }}</td></tr>
+                <tr><th>格局</th><td>{{ presale_detail.layout|default:"-" }}</td></tr>
+                <tr><th>有無管理組織</th><td>{{ presale_detail.has_management|default:"-" }}</td></tr>
+                <tr><th>土地移轉總面積</th><td>{{ presale_detail.land_transfer_area_m2|default:"-" }}</td></tr>
+                <tr><th>標題</th><td>{{ presale_detail.title|default:"-" }}</td></tr>
+                <tr><th>交屋時間</th><td>{{ presale_detail.handover_time|default:"-" }}</td></tr>
+                <tr><th>總樓層</th><td>{{ presale_detail.total_floor_text|default:"-" }}</td></tr>
+                <tr><th>坪數區間</th><td>{{ presale_detail.area_range|default:"-" }}</td></tr>
+                <tr><th>單價_萬元坪_均價</th><td>{{ presale_detail.avg_unit_price|default:"-" }}</td></tr>
+                <tr>
+                    <th>原始網址</th>
+                    <td>
+                        {% if presale_detail.url %}
+                            <a href="{{ presale_detail.url }}" target="_blank">開啟連結</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if history_detail %}
+        <div class="detail-card wide">
+            <h2>歷史交易明細</h2>
+
+            <table>
+                <tr><th>土地移轉總面積平方公尺</th><td>{{ history_detail.land_transfer_area_m2|default:"-" }}</td></tr>
+                <tr><th>建物移轉總面積平方公尺</th><td>{{ history_detail.building_transfer_area_m2|default:"-" }}</td></tr>
+                <tr><th>有無管理組織</th><td>{{ history_detail.has_management|default:"-" }}</td></tr>
+                <tr><th>交易標的</th><td>{{ history_detail.transaction_target|default:"-" }}</td></tr>
+                <tr><th>主建物面積</th><td>{{ history_detail.main_building_area|default:"-" }}</td></tr>
+            </table>
+        </div>
+        {% endif %}
+
+    </section>
+
+</div>
+
+<script>
+(function () {
+    const item = {
+        id: "{{ prop.id }}",
+        url: "{% url 'house:property_detail' prop.id %}",
+        title: "{{ prop.project_name|default:prop.location.full_address|escapejs }}",
+        total_price: "",
+        unit_price: "{{ prop.unit_price|floatformat:2 }}",
+        prediction_price: "{% if prediction %}{{ prediction.prediction_price|floatformat:2 }}{% endif %}",
+        image: "{% if sinyi_detail %}{{ sinyi_detail.large_image|escapejs }}{% elif existing_detail %}{{ existing_detail.photo|escapejs }}{% endif %}"
+    };
+
+    let history = JSON.parse(localStorage.getItem("view_history") || "[]");
+    history = history.filter(x => x.id !== item.id);
+    history.unshift(item);
+    history = history.slice(0, 20);
+    localStorage.setItem("view_history", JSON.stringify(history));
+})();
+</script>
+
+<script>
+let currentFavGroup = "591";
+let currentFavPresale = "0";
+let favoriteEditMode = false;
+
+function getCookie(name) {
+    let cookieValue = null;
+    const cookies = document.cookie.split(";");
+
+    for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+        }
+    }
+    return cookieValue;
+}
+
+function toggleFavorite(btn) {
+    const propertyId = btn.dataset.propertyId;
+
+    fetch(`/favorite/toggle/${propertyId}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        }
+    })
+    .then(res => {
+        if (res.status === 401) {
+            alert("未登入，請先登入");
+            return null;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (!data) return;
+
+        const favEvent = {
+            propertyId: propertyId,
+            favorited: data.favorited,
+            time: Date.now()
+        };
+
+        localStorage.setItem("favorite_sync_event", JSON.stringify(favEvent));
+
+        updateFavoriteButtons(propertyId, data.favorited);
+
+        if (document.getElementById("favoritePanel") &&
+            document.getElementById("favoritePanel").style.display !== "none") {
+            loadFavorites();
+        }
+
+        alert(data.message);
+    });
+}
+
+function updateFavoriteButtons(propertyId, favorited) {
+    const buttons = document.querySelectorAll(`[data-property-id="${propertyId}"]`);
+
+    buttons.forEach(btn => {
+        if (favorited) {
+            btn.classList.add("favorited");
+
+            if (btn.classList.contains("detail-favorite-btn")) {
+                btn.innerText = "♥ 已收藏";
+            } else {
+                btn.innerText = "✓";
+            }
+
+        } else {
+            btn.classList.remove("favorited");
+
+            if (btn.classList.contains("detail-favorite-btn")) {
+                btn.innerText = "♡ 收藏";
+            } else {
+                btn.innerText = "+";
+            }
+        }
+    });
+}
+
+function openSidePanel(type) {
+    document.getElementById("sidePanel").classList.add("open");
+
+    if (type === "history") {
+        document.getElementById("sidePanelTitle").innerText = "瀏覽歷史記錄";
+        document.getElementById("historyPanel").style.display = "block";
+        document.getElementById("favoritePanel").style.display = "none";
+        renderHistory();
+    } else {
+        document.getElementById("sidePanelTitle").innerText = "我的收藏";
+        document.getElementById("historyPanel").style.display = "none";
+        document.getElementById("favoritePanel").style.display = "block";
+        loadFavorites();
+    }
+}
+
+function closeSidePanel() {
+    document.getElementById("sidePanel").classList.remove("open");
+}
+
+function renderHistory() {
+    const box = document.getElementById("historyList");
+    const empty = document.querySelector("#historyPanel .side-empty");
+    const items = JSON.parse(localStorage.getItem("view_history") || "[]");
+
+    box.innerHTML = "";
+
+    if (items.length === 0) {
+        empty.style.display = "block";
+        return;
+    }
+
+    empty.style.display = "none";
+
+    items.forEach(item => {
+        box.innerHTML += renderSideItem(item, false);
+    });
+}
+
+function renderSideItem(item, editable) {
+    return `
+        <div class="side-item">
+            ${editable ? `<input type="checkbox" class="favorite-check" value="${item.id}">` : ""}
+            <a href="${item.url}" class="side-item-link">
+                ${item.image ? `<img src="${item.image}">` : ""}
+                <div class="side-item-title">${item.title}</div>
+                <div class="side-price-row">
+                    <span>${item.total_price || "-"}萬</span>
+                    <span>${item.unit_price || "-"}萬/坪</span>
+                    <span>預測 ${item.prediction_price || "-"}萬/坪</span>
+                </div>
+            </a>
+        </div>
+    `;
+}
+
+function changeFavGroup(btn) {
+    document.querySelectorAll(".favorite-top-tabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFavGroup = btn.dataset.group;
+    loadFavorites();
+}
+
+function changeFavPresale(btn) {
+    document.querySelectorAll(".favorite-sub-tabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFavPresale = btn.dataset.presale;
+    loadFavorites();
+}
+
+function loadFavorites() {
+    const box = document.getElementById("favoriteList");
+    const sort = document.getElementById("favoriteSort").value;
+
+    fetch(`/favorite/list/?group=${currentFavGroup}&presale=${currentFavPresale}&sort=${sort}`)
+    .then(res => {
+        if (res.status === 401) {
+            box.innerHTML = "";
+            return null;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (!data) return;
+
+        box.innerHTML = "";
+
+        data.items.forEach(item => {
+            box.innerHTML += renderSideItem(item, favoriteEditMode);
+        });
+    });
+}
+
+function toggleFavoriteEdit() {
+    favoriteEditMode = !favoriteEditMode;
+
+    const btn = document.getElementById("editFavoriteBtn");
+    const bar = document.getElementById("favoriteEditBar");
+
+    if (favoriteEditMode) {
+        btn.innerText = "完成編輯";
+        btn.classList.add("editing");
+        bar.style.display = "flex";
+    } else {
+        btn.innerText = "編輯";
+        btn.classList.remove("editing");
+        bar.style.display = "none";
+    }
+
+    loadFavorites();
+}
+
+function toggleSelectAllFavorites(cb) {
+    document.querySelectorAll(".favorite-check").forEach(x => x.checked = cb.checked);
+}
+
+function deleteSelectedFavorites() {
+    const ids = Array.from(document.querySelectorAll(".favorite-check:checked")).map(x => x.value);
+
+    if (ids.length === 0) {
+        alert("請先勾選物件");
+        return;
+    }
+
+    const formData = new FormData();
+    ids.forEach(id => formData.append("ids[]", id));
+
+    fetch("/favorite/delete/", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok) {
+            alert("已取消關注");
+            loadFavorites();
+        }
+    });
+}
+window.addEventListener("storage", function(event) {
+    if (event.key !== "favorite_sync_event") return;
+    if (!event.newValue) return;
+
+    const data = JSON.parse(event.newValue);
+
+    updateFavoriteButtons(
+        data.propertyId,
+        data.favorited
+    );
+});
+</script>
+
+<script>
+(function () {
+    const item = {
+        id: "{{ prop.id }}",
+        url: "{% url 'house:property_detail' prop.id %}",
+        title: "{% if existing_detail and existing_detail.title %}{{ existing_detail.title|escapejs }}{% elif presale_detail and presale_detail.title %}{{ presale_detail.title|escapejs }}{% elif sinyi_detail and sinyi_detail.name %}{{ sinyi_detail.name|escapejs }}{% else %}{{ prop.project_name|default:prop.location.full_address|escapejs }}{% endif %}",
+        image: "{% if sinyi_detail and sinyi_detail.large_image %}{{ sinyi_detail.large_image|escapejs }}{% elif existing_detail and existing_detail.photo %}{{ existing_detail.photo|escapejs }}{% endif %}",
+        total_price: "{% if existing_detail and existing_detail.total_price %}{{ existing_detail.total_price }}{% elif sinyi_detail and sinyi_detail.total_price %}{{ sinyi_detail.total_price }}{% elif prop.unit_price and prop.area_ping %}{% widthratio prop.unit_price 1 prop.area_ping %}{% endif %}",
+        unit_price: "{{ prop.unit_price|floatformat:2 }}",
+        prediction_price: "{% if prediction and prediction.prediction_price %}{{ prediction.prediction_price|floatformat:2 }}{% endif %}"
+    };
+
+    let history = JSON.parse(localStorage.getItem("view_history") || "[]");
+    history = history.filter(x => x.id !== item.id);
+    history.unshift(item);
+    history = history.slice(0, 20);
+    localStorage.setItem("view_history", JSON.stringify(history));
+})();
+</script>
+
+</body>
+</html>

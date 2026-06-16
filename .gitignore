@@ -1,0 +1,6 @@
+# 精準排除超過 100MB 的 5 個大檔案
+m/歷史data.pkl
+m/歷史結果.pkl
+myapp/final_h_data_backup.sql
+m/591非預售.pkl
+m/lgb_full_train_final.txt

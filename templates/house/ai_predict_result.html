@@ -1,0 +1,159 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 預測結果</title>
+    <link rel="stylesheet" href="{% static 'house/css/property.css' %}">
+</head>
+<body>
+{% if from_cache %}
+    <div style="color: green;">此結果來自快取</div>
+{% endif %}
+<div class="container">
+
+    <section class="detail-header">
+        <div>
+            <span class="badge">AI 預測結果</span>
+
+            <h1>{{ input_data.縣市 }} {{ input_data.鄉鎮市區 }}</h1>
+
+            <p class="address">
+                預測單價：約 {{ prediction_price|floatformat:2 }} 萬/坪
+            </p>
+
+            <p class="address">
+                預估總價：約 {{ estimated_total_price|floatformat:0 }} 萬
+            </p>
+
+            <p class="address">
+                區域上月均價：
+                {{ area_last_month_price|floatformat:2 }} 萬/坪
+                ，資料來源：{{ area_price_match_level }}
+            </p>
+
+            <p class="address">
+                {% if area_diff_pct %}
+                    {% if area_diff_pct > 0 %}
+                        比區域上月均價高 {{ area_diff_pct|floatformat:2 }}%
+                    {% else %}
+                        比區域上月均價低 {{ area_diff_pct|floatformat:2 }}%
+                    {% endif %}
+                {% else %}
+                    無法計算與區域均價差異
+                {% endif %}
+            </p>
+
+            <p class="address">
+                地址定位：
+                {% if geo_info.geocode_success %}
+                    成功，使用 {{ geo_info.used_address_label }}：
+                    {{ geo_info.used_address }}
+                {% else %}
+                    沒得到經緯度
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="detail-price">
+            <strong>{{ prediction_price|floatformat:2 }}</strong>
+            <span>萬/坪</span>
+        </div>
+    </section>
+
+    <section class="detail-grid">
+        <div class="detail-card">
+            <h2>價格分析</h2>
+
+            <table>
+                <tr>
+                    <th>AI 預測單價</th>
+                    <td>{{ prediction_price|floatformat:2 }} 萬/坪</td>
+                </tr>
+                <tr>
+                    <th>輸入坪數</th>
+                    <td>{{ input_data.坪數|floatformat:2 }} 坪</td>
+                </tr>
+                <tr>
+                    <th>預估總價</th>
+                    <td>{{ estimated_total_price|floatformat:0 }} 萬</td>
+                </tr>
+                <tr>
+                    <th>區域上月均價</th>
+                    <td>{{ area_last_month_price|floatformat:2 }} 萬/坪</td>
+                </tr>
+                <tr>
+                    <th>均價資料來源</th>
+                    <td>{{ area_price_match_level }}</td>
+                </tr>
+                <tr>
+                    <th>與區域均價差異</th>
+                    <td>
+                        {% if area_diff_pct %}
+                            {{ area_diff_pct|floatformat:2 }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>唯一地理位置</th>
+                    <td>{{ input_data.唯一地理位置|default:"-" }}</td>
+                </tr>   
+                <tr>
+                    <th>建案名稱</th>
+                    <td>{{ input_data.建案名稱|default:"一般成屋" }}</td>
+                </tr>                             
+            </table>
+        </div>
+        
+        <div class="detail-card">
+            <h2>地址解析</h2>
+            <table>
+                <tr><th>乾淨地理位置</th><td>{{ clean_info.乾淨地理位置 }}</td></tr>
+                <tr><th>乾淨地址</th><td>{{ clean_info.乾淨地址 }}</td></tr>
+                <tr><th>去號</th><td>{{ clean_info.去號 }}</td></tr>
+                <tr><th>去弄</th><td>{{ clean_info.去弄 }}</td></tr>
+                <tr><th>去巷</th><td>{{ clean_info.去巷 }}</td></tr>
+            </table>
+        </div>
+
+        <div class="detail-card">
+            <h2>經緯度結果</h2>
+            <table>
+                <tr><th>狀態</th><td>{{ geo_info.used_address_label }}</td></tr>
+                <tr><th>使用地址</th><td>{{ geo_info.used_address|default:"沒得到經緯度" }}</td></tr>
+                <tr><th>緯度</th><td>{{ geo_info.lat|default:"-" }}</td></tr>
+                <tr><th>經度</th><td>{{ geo_info.lon|default:"-" }}</td></tr>
+            </table>
+        </div>
+
+        <div class="detail-card">
+            <h2>生活機能分析</h2>
+            <table>
+                <tr><th>便利商店 300m</th><td>{{ poi_features.poi_convenience_count_300m }}</td></tr>
+                <tr><th>便利商店 500m</th><td>{{ poi_features.poi_convenience_count_500m }}</td></tr>
+                <tr><th>餐飲 300m</th><td>{{ poi_features.poi_food_count_300m }}</td></tr>
+                <tr><th>餐飲 500m</th><td>{{ poi_features.poi_food_count_500m }}</td></tr>
+                <tr><th>銀行 500m</th><td>{{ poi_features.poi_bank_count_500m }}</td></tr>
+                <tr><th>醫療 500m</th><td>{{ poi_features.poi_medical_count_500m }}</td></tr>
+                <tr><th>停車場 500m</th><td>{{ poi_features.poi_parking_count_500m }}</td></tr>
+            </table>
+        </div>
+
+        <div class="detail-card">
+            <h2>交通距離</h2>
+            <table>
+                <tr><th>高鐵距離</th><td>{{ poi_features.distance_to_thsr_m }} m</td></tr>
+                <tr><th>台鐵距離</th><td>{{ poi_features.distance_to_tra_m }} m</td></tr>
+                <tr><th>捷運距離</th><td>{{ poi_features.distance_to_mrt_m }} m</td></tr>
+                <tr><th>宗教場所距離</th><td>{{ poi_features.distance_to_nearest_worship_m }} m</td></tr>
+            </table>
+        </div>
+
+    </section>
+
+</div>
+
+</body>
+</html>

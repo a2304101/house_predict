@@ -13,7 +13,8 @@ https://saber591.win
 
 📄 30分鐘完整專案口試簡報
 
-房價預測系統_30分鐘口說版_v8.pdf
+
+[房價預測系統_30分鐘口說版_v8.pdf](https://github.com/user-attachments/files/29028340/_30._v8.pdf)
 
 系統展示
 房屋列表頁

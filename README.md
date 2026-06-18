@@ -8,7 +8,7 @@
 
 🌐 Demo Website
 
-https://saber591.win
+https://saber591.win/property
 
 ### 專案簡報
 
